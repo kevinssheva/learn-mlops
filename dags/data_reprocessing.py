@@ -20,9 +20,9 @@ DATA_BUCKET_NAME = "data"
 # Data parameters
 NUMERIC_COLUMNS = ["tenure", "MonthlyCharges", "TotalCharges"]
 
-S3_ENDPOINT_URL = os.environ.get("MLFLOW_S3_ENDPOINT_URL", "http://host.docker.internal:9000")
-AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", "minioadmin")
-AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "minioadmin")
+S3_ENDPOINT_URL = os.environ["MLFLOW_S3_ENDPOINT_URL"]
+AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
+AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
 
 
 @dag(
