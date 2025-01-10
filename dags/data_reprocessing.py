@@ -1,3 +1,4 @@
+import os
 from airflow import Dataset
 from airflow.decorators import dag, task
 from pendulum import datetime
@@ -9,7 +10,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 
 # Constants used in the DAG
-COMBINED_DATA_PATH = "combined_data.csv"
+COMBINED_DATA_PATH = "churn_combined.csv"
 PROCESSED_COMBINED_DATA_PATH = "processed_combined_data.csv"
 
 # AWS S3 parameters
@@ -18,6 +19,10 @@ DATA_BUCKET_NAME = "data"
 
 # Data parameters
 NUMERIC_COLUMNS = ["tenure", "MonthlyCharges", "TotalCharges"]
+
+S3_ENDPOINT_URL = os.environ.get("MLFLOW_S3_ENDPOINT_URL", "http://host.docker.internal:9000")
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", "minioadmin")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "minioadmin")
 
 
 @dag(
@@ -30,14 +35,21 @@ def data_reprocessing():
     end = EmptyOperator(
         task_id="end",
         outlets=[
-            Dataset("s3://" + DATA_BUCKET_NAME + "_" + PROCESSED_COMBINED_DATA_PATH)
+            Dataset("s3://" + DATA_BUCKET_NAME +
+                    "_" + PROCESSED_COMBINED_DATA_PATH)
         ],
     )
 
     @aql.dataframe()
     def fetch_data(file_path: str) -> DataFrame:
         """Fetch data from S3."""
-        return pd.read_csv(f"s3://{DATA_BUCKET_NAME}/{file_path}")
+        return pd.read_csv(
+            f"s3://{DATA_BUCKET_NAME}/{file_path}",
+            storage_options={
+                "key": AWS_ACCESS_KEY_ID,
+                "secret": AWS_SECRET_ACCESS_KEY,
+                "client_kwargs": {"endpoint_url": S3_ENDPOINT_URL}
+            })
 
     @aql.dataframe()
     def data_manipulation(df: DataFrame) -> DataFrame:
@@ -52,7 +64,8 @@ def data_reprocessing():
     @aql.dataframe()
     def data_preprocessing(preprocessed_df: DataFrame) -> DataFrame:
         """Scale numeric features and encode categorical features."""
-        categorical_columns = preprocessed_df.select_dtypes(include=["object"]).columns
+        categorical_columns = preprocessed_df.select_dtypes(
+            include=["object"]).columns
         preprocessed_df[categorical_columns] = preprocessed_df[
             categorical_columns
         ].apply(LabelEncoder().fit_transform)

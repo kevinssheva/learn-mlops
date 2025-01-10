@@ -16,7 +16,7 @@ PRODUCTION_DATA_PATH = "churn_production.csv"
 COMBINED_DATA_PATH = "churn_combined.csv"
 AWS_CONN_ID = "aws_default"
 DATA_BUCKET_NAME = "data"
-PSI_THRESHOLD = 0.1
+PSI_THRESHOLD = 0.00001
 NUMERIC_COLUMNS = ["tenure", "MonthlyCharges", "TotalCharges"]
 
 
