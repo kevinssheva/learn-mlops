@@ -30,6 +30,7 @@ def drift_detection():
     end = EmptyOperator(
         task_id="end",
         outlets=[Dataset("s3://" + DATA_BUCKET_NAME + "_" + COMBINED_DATA_PATH)],
+        trigger_rule="none_failed_min_one_success",
     )
     skip_saving = EmptyOperator(task_id="skip_saving", trigger_rule="none_failed")
 
@@ -72,7 +73,7 @@ def drift_detection():
         """Check if data drift occurred and branch tasks based on the result."""
         drift_detected = any(score > threshold for score in psi_scores.values())
         print(f"Drift detected: {drift_detected}")
-        return "save_data_to_s3" if drift_detected else "skip_saving"
+        return "save_combined_data_to_s3" if drift_detected else "skip_saving"
 
     @task
     def combine_data(
@@ -92,7 +93,7 @@ def drift_detection():
     combined_data = combine_data(baseline_data, production_data)
 
     save_combined_data_to_s3 = aql.export_file(
-        task_id="save_data_to_s3",
+        task_id="save_combined_data_to_s3",
         input_data=combined_data,
         output_file=File(
             path=os.path.join("s3://", DATA_BUCKET_NAME, COMBINED_DATA_PATH),
